@@ -10,6 +10,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 //basically tells the system that you want json to be used
 
+// Temporary data
+const events = [];
+
 //Hooking GraphQL Express Schema
 app.use(
   "/graphql",
@@ -17,12 +20,26 @@ app.use(
     //Schema, contains list of queries and mutations
     schema: buildSchema(`
 
+        type Event {
+            _id: ID!
+            title: String!
+            description: String!
+            price: Float!
+            date: String!
+        }
+
+        input EventInput {
+            title: String!
+            description: String!
+            price: Float!
+        }
+
             type RootQuery {
-                events: [String!]!
+                events: [Event!]!
             }
 
             type RootMutation {
-                createEvent(name: String!): String!
+                createEvent(eventInput: EventInput): Event!
             }
 
             schema{
@@ -35,11 +52,19 @@ app.use(
     //Resolvers, containing actual implementation of schema items
     rootValue: {
       events: () => {
-        return ["Cooking", "Sailing", "Coding"];
+        return events;
       },
       createEvent: args => {
-        const eventName = args.name;
-        return eventName;
+        const event = {
+          _id: Math.random().toString(),
+          title: args.eventInput.title,
+          description: args.eventInput.description,
+          price: +args.eventInput.price,
+          date: new Date().toISOString()
+        };
+
+        events.push(event);
+        return event;
       }
     },
     graphiql: true
