@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const graphqlHttp = require("express-graphql");
 const { buildSchema } = require("graphql");
+const mongoose = require("mongoose");
 
 const app = express();
 
@@ -13,6 +14,9 @@ app.use(bodyParser.json());
 // Temporary data
 const events = [];
 
+app.get("/", (req, res, next) => {
+  res.send("Use /graphql option to use GraphiQL tool");
+});
 //Hooking GraphQL Express Schema
 app.use(
   "/graphql",
@@ -71,6 +75,19 @@ app.use(
   })
 );
 // app.get("/", (req, res, next) => res.send("Hello lucky user!!"));
-app.listen(3000, () => {
-  console.log("Server up and running on port 3000");
-});
+
+//mongoose
+mongoose
+  .connect(
+    `mongodb+srv://${process.env.MONGO_USER}:${
+      process.env.MONGO_PASSWORD
+    }@cluster0-la3tk.mongodb.net/test?retryWrites=true `
+  )
+  .then(() => {
+    app.listen(3000, () => {
+      console.log(
+        "Server up and connected to MongoDB and running on port 3000"
+      );
+    });
+  })
+  .catch(err => console.log("Error while connecting MongoDB: " + err));
