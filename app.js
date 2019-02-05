@@ -57,49 +57,36 @@ app.use(
 
     //Resolvers, containing actual implementation of schema items
     rootValue: {
-      events: () => {
-        return Event.find()
-          .then(events => {
-            events.map(event => (event._doc._id = event.id));
-            //event.id - mongoose will convert native _id to a string
-            return events;
-          })
-          .catch(err => {
-            console.log("Error ", err);
-            throw err;
-          });
+      events: async () => {
+        try {
+          const events = await Event.find();
+          // events.map(event => (event._doc._id = event.id));
+          return events;
+        } catch (err) {
+          console.log("Error ", err);
+          throw err;
+        }
       },
-      createEvent: args => {
-        // const event = {
-        //   _id: Math.random().toString(),
-        //   title: args.eventInput.title,
-        //   description: args.eventInput.description,
-        //   price: +args.eventInput.price,
-        //   date: new Date().toISOString()
-        // };
+      createEvent: async args => {
         const event = new Event({
           title: args.eventInput.title,
           description: args.eventInput.description,
           price: +args.eventInput.price
         });
-        return event
-          .save()
-          .then(result => {
-            return { ...result._doc }; //Gives all core properties and leaves metadata
-          })
-          .catch(err => {
-            console.log("Error ", err);
-            throw err;
-          });
-        return event;
+        try {
+          await event.save();
+          return event;
+        } catch (err) {
+          console.log("Error ", err);
+          throw err;
+        }
       }
     },
     graphiql: true
   })
 );
-// app.get("/", (req, res, next) => res.send("Hello lucky user!!"));
 
-//mongoose
+//mongoose connection
 mongoose
   .connect(
     `mongodb+srv://${process.env.MONGO_USER}:${
