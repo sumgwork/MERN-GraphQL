@@ -107,5 +107,23 @@ module.exports = {
       console.log(err);
       throw err;
     }
+  },
+  login: async args => {
+    try {
+      const user = await User.findOne({ email: args.email });
+      if (!user) {
+        throw new Error("Invalid credentials");
+      }
+      const match = await bcrypt.compare(args.password, user.password);
+      console.log("match", match);
+      if (!match) {
+        throw new Error("Invalid credentials");
+      }
+      user.password = null;
+      return user;
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
   }
 };
