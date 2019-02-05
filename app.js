@@ -3,8 +3,10 @@ const bodyParser = require("body-parser");
 const graphqlHttp = require("express-graphql");
 const { buildSchema } = require("graphql");
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 
 const Event = require("./models/event");
+const User = require("./models/user");
 
 const app = express();
 
@@ -40,18 +42,33 @@ app.use(
             price: Float!
         }
 
-            type RootQuery {
-                events: [Event!]!
-            }
+        type User {
+          _id: ID!
+          name: String!
+          password: String!
+          email: String!
+        }
 
-            type RootMutation {
-                createEvent(eventInput: EventInput): Event!
-            }
+        input UserInput{
+          name: String!
+          password: String!
+          email: String!
+        }
 
-            schema{
-                query: RootQuery
-                mutation: RootMutation
-            }
+        type RootQuery {
+            events: [Event!]!,
+            users: [User!]!
+        }
+
+        type RootMutation {
+            createEvent(eventInput: EventInput): Event!,
+            createUser(userInput: UserInput): User!
+        }
+
+        schema{
+            query: RootQuery
+            mutation: RootMutation
+        }
         
     `),
 
@@ -76,6 +93,31 @@ app.use(
         try {
           await event.save();
           return event;
+        } catch (err) {
+          console.log("Error ", err);
+          throw err;
+        }
+      },
+      users: async () => {
+        try {
+          const users = await User.find();
+          return users;
+        } catch (err) {
+          console.log("Error ", err);
+          throw err;
+        }
+      },
+      createUser: async args => {
+        const password = await bcrypt.hash(args.userInput.password, 12);
+        const user = new User({
+          name: args.userInput.name,
+          email: args.userInput.email,
+          password
+        });
+        try {
+          await user.save();
+          delete user.password;
+          return user;
         } catch (err) {
           console.log("Error ", err);
           throw err;
