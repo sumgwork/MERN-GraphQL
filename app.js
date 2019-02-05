@@ -34,6 +34,7 @@ app.use(
             description: String!
             price: Float!
             date: String!
+            creator: User!
         }
 
         input EventInput {
@@ -45,8 +46,9 @@ app.use(
         type User {
           _id: ID!
           name: String!
-          password: String!
+          password: String
           email: String!
+          createdEvents: [Event!]
         }
 
         input UserInput{
@@ -76,7 +78,7 @@ app.use(
     rootValue: {
       events: async () => {
         try {
-          const events = await Event.find();
+          const events = await Event.find().populate("creator");
           // events.map(event => (event._doc._id = event.id));
           return events;
         } catch (err) {
@@ -88,10 +90,18 @@ app.use(
         const event = new Event({
           title: args.eventInput.title,
           description: args.eventInput.description,
-          price: +args.eventInput.price
+          price: +args.eventInput.price,
+          creator: "5c58ff87a4335d14b8d9c7ce"
         });
         try {
           await event.save();
+          const user = await User.findById("5c58ff87a4335d14b8d9c7ce");
+          if (!user) {
+            throw new Error("No such user exists");
+          }
+          user.createdEvents.push(event);
+          await user.save();
+
           return event;
         } catch (err) {
           console.log("Error ", err);
@@ -100,7 +110,8 @@ app.use(
       },
       users: async () => {
         try {
-          const users = await User.find();
+          const users = await User.find().populate("createdEvents");
+          users.map(user => (user.password = null));
           return users;
         } catch (err) {
           console.log("Error ", err);
@@ -115,8 +126,14 @@ app.use(
           password
         });
         try {
+          const existingUser = await User.findOne({
+            email: args.userInput.email
+          });
+          if (existingUser)
+            throw new Error("User with this email id already exists");
+
           await user.save();
-          delete user.password;
+          user.password = null;
           return user;
         } catch (err) {
           console.log("Error ", err);
