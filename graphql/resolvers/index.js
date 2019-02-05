@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 
 const Event = require("../../models/event");
 const User = require("../../models/user");
+const Booking = require("../../models/booking");
 
 module.exports = {
   events: async () => {
@@ -9,6 +10,17 @@ module.exports = {
       const events = await Event.find().populate("creator");
       // events.map(event => (event._doc._id = event.id));
       return events;
+    } catch (err) {
+      console.log("Error ", err);
+      throw err;
+    }
+  },
+  bookings: async () => {
+    try {
+      const bookings = await Booking.find()
+        .populate("event")
+        .populate("user");
+      return bookings;
     } catch (err) {
       console.log("Error ", err);
       throw err;
@@ -65,6 +77,34 @@ module.exports = {
       return user;
     } catch (err) {
       console.log("Error ", err);
+      throw err;
+    }
+  },
+
+  bookEvent: async args => {
+    const fetchedEvent = await Event.findById(args.eventId);
+    if (!fetchedEvent) {
+      throw new Error("Incorrect event id");
+    }
+    const booking = new Booking({
+      user: "5c58ff87a4335d14b8d9c7ce",
+      event: fetchedEvent
+    });
+    const result = await booking.save();
+    return result;
+  },
+
+  cancelBooking: async args => {
+    try {
+      const booking = await Booking.findById(args.bookingId).populate("event");
+      if (!booking) {
+        throw new Error("Incorrect booking id");
+      }
+      const event = booking.event;
+      await Booking.deleteOne({ _id: args.bookingId });
+      return event;
+    } catch (err) {
+      console.log(err);
       throw err;
     }
   }
